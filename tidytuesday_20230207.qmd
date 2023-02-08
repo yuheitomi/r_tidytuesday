@@ -1,0 +1,47 @@
+---
+title: "2023-02-07 Big Tech Stock Prices"
+format:
+  html:
+    embed-resources: true
+---
+
+```{r initialize}
+pacman::p_load(tidyverse)
+theme_set(theme_bw())
+```
+
+```{r}
+tuesdata <- tidytuesdayR::tt_load('2023-02-07')
+big_tech_stock_prices <- tuesdata$big_tech_stock_prices
+big_tech_companies <- tuesdata$big_tech_companies
+
+stock_prices <- big_tech_stock_prices |> 
+  left_join(big_tech_companies, by = join_by(stock_symbol)) |> 
+  relocate(company, .after = stock_symbol)
+```
+
+```{r}
+stock_prices |> 
+  ggplot(aes(x = date, y = close)) +
+  geom_line(aes(color = stock_symbol))
+```
+
+```{r}
+stock_prices |> 
+  arrange(stock_symbol, date) |> 
+  mutate(price_index = close / first(close),
+         .by = stock_symbol) |> 
+  ggplot(aes(x = date, y = price_index)) +
+  geom_line() +
+  facet_wrap(vars(stock_symbol), scales = "free_y")
+```
+
+```{r}
+stock_prices |>
+  mutate(month = lubridate::floor_date(date, unit = "month")) |> 
+  summarise(volume = sum(volume, na.rm = TRUE), .by = c(stock_symbol, month)) |> 
+  ggplot(aes(x = month, y = volume)) +
+  geom_col() +
+  facet_wrap(vars(stock_symbol))
+```
+
